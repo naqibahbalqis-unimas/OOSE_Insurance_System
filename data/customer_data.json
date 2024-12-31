@@ -1,0 +1,44 @@
+{
+    "jennydoe@gmail.com": {
+        "customer_info": {
+            "email": "jennydoe@gmail.com",
+            "name": "jennydoe",
+            "contact_number": "",
+            "address": "",
+            "birth_date": "2024-12-29",
+            "credit_score": 0.0
+        },
+        "policies": {
+            "POL001": {
+                "policy_id": "POL001",
+                "customer_id": "jennydoe@gmail.com",
+                "policy_type": "LIFE",
+                "coverage_amount": 123121231.0,
+                "premium": 28810368.05,
+                "status": "1",
+                "start_date": "2024-12-29T00:00:00",
+                "end_date": "2060-12-29T00:00:00",
+                "conditions": [],
+                "beneficiary": "John Doe",
+                "death_benefit": 123123133.0
+            },
+            "POL002": {
+                "policy_id": "POL002",
+                "customer_id": "jennydoe@gmail.com",
+                "policy_type": "CAR",
+                "coverage_amount": 123123.0,
+                "premium": 59099.04,
+                "status": "1",
+                "start_date": "2024-12-29T00:00:00",
+                "end_date": "2030-12-29T00:00:00",
+                "conditions": [],
+                "vehicle_id": "V002",
+                "is_comprehensive": true,
+                "vehicle_age": 4,
+                "vehicle_model": "Perodua Myvi",
+                "vehicle_plate_number": "MCS2123",
+                "vehicle_condition": "Good"
+            }
+        }
+    }
+}
