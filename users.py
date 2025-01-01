@@ -117,7 +117,7 @@ class UserManager:
 class UserCLI:
     def __init__(self, auth_manager: AuthenticationManager):
         self.user_manager = UserManager(auth_manager)
-        self.current_user = None
+        self.current_user: Optional[User] = None
 
     def display_menu(self):
         print("\n=== User Management ===")
@@ -135,8 +135,8 @@ class UserCLI:
         print(message)
         
         if success:
-            user = self.user_manager.get_user(email)
-            self._update_user_details(user)
+            self.current_user = self.user_manager.get_user(email)
+            self._update_user_details(self.current_user)
 
     def _update_user_details(self, user: User):
         print("\nEnter user details:")
@@ -161,7 +161,15 @@ class UserCLI:
         if not self.current_user:
             print("Please login first!")
             return
-            
+        
+        # Ensure current_user is a User object
+        if isinstance(self.current_user, str):
+            self.current_user = self.user_manager.get_user(self.current_user)
+        
+        if not self.current_user:
+            print("User not found. Please login again!")
+            return
+
         print("\n=== Update Profile ===")
         self._update_user_details(self.current_user)
 
@@ -169,16 +177,19 @@ class UserCLI:
         if not self.current_user:
             print("Please login first!")
             return
-            
-        user = self.user_manager.get_user(self.current_user.email)
-        if user:
+        
+        # Ensure current_user is a User object
+        if isinstance(self.current_user, str):
+            self.current_user = self.user_manager.get_user(self.current_user)
+        
+        if self.current_user:
             print("\n=== User Profile ===")
-            print(f"Email: {user.email}")
-            print(f"Address: {user.address}")
-            print(f"Customer Type: {user.customer_type}")
-            print(f"Registration Date: {user.registration_date}")
-            print(f"Credit Score: {user.credit_score}")
-            print(f"Contact Number: {user.get_contact_number()}")
+            print(f"Email: {self.current_user.email}")
+            print(f"Address: {self.current_user.address}")
+            print(f"Customer Type: {self.current_user.customer_type}")
+            print(f"Registration Date: {self.current_user.registration_date}")
+            print(f"Credit Score: {self.current_user.credit_score}")
+            print(f"Contact Number: {self.current_user.get_contact_number()}")
         else:
             print("User profile not found!")
 
