@@ -40,5 +40,30 @@
                 "vehicle_condition": "Good"
             }
         }
+    },
+    "customer@gmail.com": {
+        "customer_info": {
+            "email": "customer@gmail.com",
+            "name": "customer",
+            "contact_number": "",
+            "address": "",
+            "birth_date": "2025-01-01",
+            "credit_score": 0.0
+        },
+        "policies": {
+            "POL003": {
+                "policy_id": "POL003",
+                "customer_id": "customer@gmail.com",
+                "policy_type": "LIFE",
+                "coverage_amount": 10000.0,
+                "premium": 195.0,
+                "status": "1",
+                "start_date": "2025-01-01T00:00:00",
+                "end_date": "2028-01-01T00:00:00",
+                "conditions": [],
+                "beneficiary": "Arif",
+                "death_benefit": 12000.0
+            }
+        }
     }
 }
