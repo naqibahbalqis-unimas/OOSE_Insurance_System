@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 # __main__.py
+=======
+
+>>>>>>> Stashed changes
 from auth import AuthenticationManager, AuthCLI
 from admin import Admin, AdminCLI
 from users import UserManager, UserCLI
