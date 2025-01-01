@@ -1,3 +1,4 @@
+# __main__.py
 from auth import AuthenticationManager, AuthCLI
 from admin import Admin, AdminCLI
 from users import UserManager, UserCLI
