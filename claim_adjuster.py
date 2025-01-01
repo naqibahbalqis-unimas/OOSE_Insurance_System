@@ -5,6 +5,8 @@ from auth import AuthenticationManager
 from claim import Claim, ClaimJSONHandler
 from policy import Policy
 from enum import Enum
+from claims_storage_service import ClaimsStorageService
+import json
 
 class RiskLevel(Enum):
     LOW = "LOW"
@@ -232,70 +234,110 @@ class ClaimAdjusterCLI:
                 print("Invalid choice. Please try again.")
 
     def view_all_claims(self):
-        """Display all claims"""
-        if not self.claims:
-            print("\nNo claims found.")
+        """Display all pending claims that need review"""
+        pending_claims = ClaimsStorageService.get_pending_claims()
+        
+        if not pending_claims:
+            print("\nNo pending claims found.")
             return
 
-        print("\n=== All Claims ===")
-        for claim in self.claims.values():
-            print(f"\nClaim ID: {claim.get_claim_id()}")
-            print(f"Status: {claim.get_status()}")
-            print(f"Amount: ${claim.get_amount():,.2f}")
-            print(f"Description: {claim.get_description()}")
+        print("\n=== Pending Claims ===")
+        for claim_id, claim_data in pending_claims.items():
+            print(f"\nClaim ID: {claim_id}")
+            print(f"Policy ID: {claim_data['policy_id']}")
+            print(f"Customer ID: {claim_data['customer_id']}")
+            print(f"Amount: ${float(claim_data['amount']):,.2f}")
+            print(f"Description: {claim_data['description']}")
+            print(f"Date Filed: {claim_data['date_filed']}")
+            print("-" * 50)
 
     def process_claim(self):
         """Process a specific claim"""
         claim_id = input("\nEnter Claim ID: ").strip()
-        claim = self.claims.get(claim_id)
         
-        if not claim:
+        # Load claims from storage
+        all_claims = ClaimsStorageService.load_all_claims()
+        claim_data = all_claims.get(claim_id)
+        
+        if not claim_data:
             print("Claim not found.")
             return
 
-        policy = self.policies.get(claim.get_policy_id())
-        if not policy:
-            print("Associated policy not found.")
-            return
-
-        print(f"\nCurrent Status: {claim.get_status()}")
-        risk_level = self.current_user.assess_claim_risk(claim, policy)
-        print(f"Risk Level: {risk_level.value}")
+        print(f"\nClaim Amount: ${float(claim_data['amount']):,.2f}")
+        print(f"Description: {claim_data['description']}")
         
-        action = input("Action (APPROVE/REJECT/REVIEW): ").strip().upper()
-        if action in ["APPROVE", "REJECT", "REVIEW"]:
-            if self.current_user.update_claim_status(claim, action):
-                print(f"Claim status updated to {action}")
-                if action == "APPROVE":
-                    payout = self.current_user.calculate_claim_payout(claim, policy)
-                    print(f"Recommended Payout: ${payout:,.2f}")
-            else:
+        print("\nSelect Action:")
+        print("1. Approve")
+        print("2. Reject")
+        print("3. Review")
+        
+        action = input("Enter choice (1-3): ").strip()
+        
+        # Convert numeric choice to action string
+        action_map = {
+            "1": "APPROVE",
+            "2": "REJECT",
+            "3": "REVIEW"
+        }
+        
+        if action in action_map:
+            # Update claim status
+            claim_data['status'] = action_map[action]
+            
+            # Save the updated claim
+            all_claims[claim_id] = claim_data  # Update in the dictionary
+            
+            # Save all claims back to storage
+            try:
+                with open(ClaimsStorageService.CLAIMS_FILE, 'w') as f:
+                    json.dump(all_claims, f, indent=4, default=str)
+                print(f"Claim status updated to {action_map[action]}")
+                
+                if action == "1":  # If approved
+                    coverage_amount = float(claim_data['amount'])
+                    print(f"Recommended Payout: ${coverage_amount:,.2f}")
+            except Exception as e:
+                print(f"Error saving claim: {str(e)}")
                 print("Failed to update claim status")
-
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")
+            
     def generate_report(self):
         """Generate assessment report for a claim"""
         claim_id = input("\nEnter Claim ID: ").strip()
-        claim = self.claims.get(claim_id)
         
-        if not claim:
+        # Load ALL claims, not just pending ones
+        all_claims = ClaimsStorageService.load_all_claims()
+        claim_data = all_claims.get(claim_id)
+        
+        if not claim_data:
             print("Claim not found.")
             return
 
-        policy = self.policies.get(claim.get_policy_id())
-        if not policy:
-            print("Associated policy not found.")
-            return
-
-        report = self.current_user.generate_assessment_report(claim, policy)
-        
         print("\n=== Assessment Report ===")
-        for key, value in report.items():
-            if isinstance(value, dict):
-                print(f"\n{key.replace('_', ' ').title()}:")
-                for k, v in value.items():
-                    print(f"  {k.replace('_', ' ').title()}: {v}")
-            else:
-                print(f"{key.replace('_', ' ').title()}: {value}")
+        print(f"Claim ID: {claim_id}")
+        print(f"Policy ID: {claim_data['policy_id']}")
+        print(f"Customer ID: {claim_data['customer_id']}")
+        print(f"Amount: ${float(claim_data['amount']):,.2f}")
+        print(f"Description: {claim_data['description']}")
+        print(f"Status: {claim_data['status']}")
+        print(f"Date Filed: {claim_data['date_filed']}")
+        
+        # Add risk assessment
+        print("\nRisk Assessment:")
+        print(f"Coverage Ratio: {(float(claim_data['amount']) / 10000.0):,.2%}")  # Assuming policy coverage is 10000
+        print(f"Claim Age: {(datetime.now() - datetime.strptime(claim_data['date_filed'], '%Y-%m-%d')).days} days")
+        
+        # Add recommendation based on status
+        print("\nRecommendation:")
+        if claim_data['status'] == "APPROVE":
+            print("Claim has been approved for payout")
+            print(f"Recommended Payout: ${float(claim_data['amount']):,.2f}")
+        elif claim_data['status'] == "REJECT":
+            print("Claim has been rejected")
+        elif claim_data['status'] == "REVIEW":
+            print("Claim requires further review")
+        print("-" * 50)
 
     def update_profile(self):
         """Update adjuster's profile"""

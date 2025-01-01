@@ -82,5 +82,11 @@
         "password": "arip",
         "role": "admin",
         "name": "arip"
+    },
+    "anthony@gmail.com": {
+        "email": "anthony@gmail.com",
+        "password": "anthony",
+        "role": "customer",
+        "name": "anthony"
     }
 }

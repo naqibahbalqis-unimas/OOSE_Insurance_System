@@ -27,6 +27,7 @@ class Sale:
         self.commission_earned = 0.0
         self.sale_date = datetime.now()
         self.status = SaleStatus.PENDING.value
+        
 
     def to_dict(self) -> Dict:
         return {
@@ -55,7 +56,7 @@ class Sale:
 class Agent(User):
     """Implementation of insurance sales agent"""
     def __init__(self, user_id: str, name: str, email: str, password: str):
-        super().__init__(user_id, name, email, password, access_level="Agent")
+        super().__init__(user_id, name, email, password)
         self.commission_rate: float = 0.0
         self.sales_target: float = 0.0
         self.territory: str = ""
@@ -187,17 +188,55 @@ class AgentCLI:
         self.sales_data_file = "data/sales.json"
         self.user_manager = UserManager(auth_manager)  # Add UserManager instance
         self.customers: Dict[str, Dict] = {}  # Track created customers
-
+        self.auth_manager = auth_manager
+        self.current_user = None  # This needs to be properly set during login
+        self.agent = None  # Add this to store agent instance
+        self.load_data()  # Load data during initialization
+        
+    def initialize_agent(self, email: str):
+        """Initialize agent data after login"""
+        try:
+            user = self.auth_manager._users.get(email)
+            if user and user.role == "agent":
+                self.agent = Agent(
+                    user_id=email,
+                    name=user.name,
+                    email=email,
+                    password=user.password
+                )
+                self.current_user = self.agent  # Set current_user to agent instance
+                return True
+            else:
+                print("Invalid agent account")
+                return False
+        except Exception as e:
+            print(f"Error initializing agent: {str(e)}")
+            return False
+        
     def load_data(self):
         """Load sales and policies data"""
         try:
-            if os.path.exists(self.sales_data_file):
-                with open(self.sales_data_file, 'r') as f:
+            # Initialize empty collections if files don't exist
+            self.sales = {}
+            self.policies = {}
+            self.customers = {}
+            
+          # Load sales data
+            if os.path.exists('data/sales.json'):
+                with open('data/sales.json', 'r') as f:
                     sales_data = json.load(f)
-                self.sales = {
-                    sale_id: Sale.from_dict(data)
-                    for sale_id, data in sales_data.items()
-                }
+                    self.sales = {
+                        sale_id: Sale.from_dict(data)
+                        for sale_id, data in sales_data.items()
+                    }
+                    
+          # Load customer data from file
+            if os.path.exists('data/customers.json'):
+                with open('data/customers.json', 'r') as f:
+                    self.customers = json.load(f)
+            
+                    
+                    
         except Exception as e:
             print(f"Error loading data: {str(e)}")
 
@@ -259,57 +298,68 @@ class AgentCLI:
 
     def view_sales_dashboard(self):
         """Display sales dashboard"""
-        if not self.current_user:
+        if not self.agent:  # Change condition to check for agent instance
             print("Please log in first.")
             return
 
+        # Load sales data if not already loaded
+        if not hasattr(self, 'sales'):
+            self.load_data()
+
         print("\n=== Sales Dashboard ===")
-        print(f"Total Sales: ${self.current_user.total_sales:,.2f}")
-        print(f"Sales Count: {self.current_user.sales_count}")
-        print(f"Target Achievement: {self.current_user.calculate_target_achievement():.1%}")
-        print(f"Performance Level: {self.current_user.current_performance_level}")
+        print(f"Agent Name: {self.agent.name}")
+        print(f"Territory: {self.agent.territory}")
         
-        # Recent sales
-        print("\nRecent Sales:")
-        recent_sales = sorted(
-            self.sales.values(), 
-            key=lambda x: x.sale_date, 
-            reverse=True
-        )[:5]
+        # Display sales metrics
+        total_sales = sum(sale.amount for sale in self.sales.values())
+        print(f"\nSales Performance:")
+        print(f"Total Sales: ${total_sales:,.2f}")
+        print(f"Number of Sales: {len(self.sales)}")
         
-        for sale in recent_sales:
-            print(f"\nSale ID: {sale.sale_id}")
-            print(f"Amount: ${sale.amount:,.2f}")
-            print(f"Commission: ${sale.commission_earned:,.2f}")
-            print(f"Date: {sale.sale_date.strftime('%Y-%m-%d')}")
+        # Show recent customers
+        print("\nRecent Customers:")
+        for customer_id, data in list(self.customers.items())[-5:]:
+            print(f"- {data['name']} ({customer_id})")
 
     def record_new_sale(self):
         """Record a new policy sale"""
-        if not self.current_user:
+        if not self.agent:  # Check for agent instance
             print("Please log in first.")
             return
 
+        print("\n=== Record New Sale ===")
+        
+        # Select customer
+        customer_id = input("Enter Customer Email: ").strip()
+        if customer_id not in self.customers:
+            print("Customer not found. Please create customer first.")
+            return
+            
+        # Select policy type
+        print("\nAvailable Policy Types:")
+        for policy_type in PolicyType:
+            print(f"{policy_type.value}. {policy_type.name}")
+        
         try:
-            print("\n=== Record New Sale ===")
-            
-            # Get policy type
-            print("\nAvailable Policy Types:")
-            for policy_type in PolicyType:
-                print(f"- {policy_type.name}")
-            
-            policy_type = input("Enter Policy Type: ").strip().upper()
-            if policy_type not in PolicyType.__members__:
+            policy_type = int(input("\nEnter policy type number: "))
+            if policy_type not in [p.value for p in PolicyType]:
                 print("Invalid policy type.")
                 return
                 
             # Get policy details
-            policy_id = f"POL_{len(self.policies) + 1}"
-            customer_id = input("Enter Customer ID: ").strip()
-            premium = float(input("Enter Premium Amount: $"))
+            coverage_amount = float(input("Enter coverage amount: $"))
+            premium = float(input("Enter premium amount: $"))
             
             # Create sale record
             sale_id = f"SALE_{len(self.sales) + 1}"
-            sale = Sale(sale_id, policy_id, customer_id, premium)
+            policy_id = f"POL_{len(self.policies) + 1}"
+            
+            sale = Sale(
+                sale_id=sale_id,
+                policy_id=policy_id,
+                customer_id=customer_id,
+                amount=premium
+            )
             
             if self.current_user.record_sale(sale):
                 self.sales[sale_id] = sale
@@ -319,14 +369,12 @@ class AgentCLI:
             else:
                 print("Failed to record sale.")
                 
-        except ValueError as e:
-            print(f"Invalid input: {str(e)}")
-        except Exception as e:
-            print(f"Error recording sale: {str(e)}")
-
+        except ValueError:
+            print("Invalid input. Please enter numeric values for amounts.")
+    
     def view_performance_metrics(self):
         """Display detailed performance metrics"""
-        if not self.current_user:
+        if not self.agent:  # Check for agent instance
             print("Please log in first.")
             return
 
@@ -356,20 +404,26 @@ class AgentCLI:
 
     def manage_policies(self):
         """Manage policy-related tasks"""
-        print("\n=== Policy Management ===")
-        print("1. View Active Policies")
-        print("2. Check Policy Status")
-        print("3. Back")
-        
-        choice = input("\nEnter choice (1-4): ").strip()
-        
-        if choice == "1":
-            self._update_personal_details()
-        elif choice == "2":
-            self._update_territory()
-        elif choice == "3":
-            self._add_specialization()
-
+        while True:
+            print("\n=== Policy Management ===")
+            print("1. View Active Policies")
+            print("2. Check Policy Status")
+            print("3. Create New Policy")
+            print("4. Back")
+            
+            choice = input("\nEnter choice (1-4): ").strip()
+            
+            if choice == "1":
+                self.view_active_policies()
+            elif choice == "2":
+                self.check_policy_status()
+            elif choice == "3":
+                self.create_new_policy()
+            elif choice == "4":
+                break
+            else:
+                print("Invalid choice. Please try again.")
+                
     def _update_personal_details(self):
         """Update agent's personal information"""
         print("\n=== Update Personal Details ===")
@@ -813,7 +867,7 @@ class AgentCLI:
 
     def update_profile(self):
         """Update agent profile"""
-        if not self.current_user:
+        if not self.agent:  # Check for agent instance
             print("Please log in first.")
             return
 
@@ -1041,33 +1095,27 @@ class AgentCLI:
     def view_customer_details(self):
         """View customer details"""
         customer_id = input("\nEnter Customer ID (email): ").strip()
-        customer_info = self.user_manager.lookup_customer(customer_id)
         
+        # First check our local customers dictionary
+        if customer_id in self.customers:
+            customer_data = self.customers[customer_id]
+            print("\n=== Customer Details ===")
+            print(f"Customer ID: {customer_id}")
+            print(f"Name: {customer_data['name']}")
+            print(f"Contact: {customer_data['contact']}")
+            print(f"Address: {customer_data['address']}")
+            print(f"Credit Score: {customer_data['credit_score']}")
+            return
+
+        # If not found in local storage, check UserManager
+        customer_info = self.user_manager.lookup_customer(customer_id)
         if customer_info:
             print("\n=== Customer Details ===")
             for key, value in customer_info.items():
                 print(f"{key.replace('_', ' ').title()}: {value}")
-            
-            # Show associated policies and sales
-            policies = [p for p in self.policies.values() if p.get_customer_id() == customer_id]
-            sales = [s for s in self.sales.values() if s.customer_id == customer_id]
-            
-            if policies:
-                print("\nAssociated Policies:")
-                for policy in policies:
-                    print(f"- Policy ID: {policy.get_policy_id()}, "
-                          f"Type: {policy.get_policy_type().name}, "
-                          f"Status: {policy.get_status().name}")
-            
-            if sales:
-                print("\nSales History:")
-                for sale in sales:
-                    print(f"- Sale ID: {sale.sale_id}, "
-                          f"Amount: ${sale.amount:,.2f}, "
-                          f"Date: {sale.sale_date.strftime('%Y-%m-%d')}")
         else:
             print("Customer not found")
-
+            
     def list_all_customers(self):
         """Display list of all customers"""
         customers = self.user_manager.users

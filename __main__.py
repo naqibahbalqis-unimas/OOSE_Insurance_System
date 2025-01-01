@@ -1,8 +1,3 @@
-<<<<<<< Updated upstream
-# __main__.py
-=======
-
->>>>>>> Stashed changes
 from auth import AuthenticationManager, AuthCLI
 from admin import Admin, AdminCLI
 from users import UserManager, UserCLI
@@ -25,6 +20,9 @@ class MainSystem:
         self.agent_cli = AgentCLI(self.auth_manager)
         self.current_user = None
         self.current_customer = None  # Track the logged-in customer
+        
+        
+       
 
     def display_menu(self):
         print("\n=== Insurance Management System ===")
@@ -89,35 +87,45 @@ class MainSystem:
                     print("\nGoodbye!")
                     break
                 continue
-                
+
             self.display_menu()
             choice = input("\nEnter your choice: ").strip()
             user_role = self.auth_cli.auth_manager._users[self.current_user].role
 
+           
             if user_role == "customer":
                 if choice == "1":
                     self.user_cli.run()
                 elif choice == "2":
                     user_data = self.auth_cli.auth_manager._users[self.current_user]
-                    # Create user profile if it doesn't exist
-                    if not self.user_manager.get_user(self.current_user):
-                        success, _ = self.user_manager.create_user(self.current_user, user_data.password)
-                        if not success:
-                            print("Failed to create user profile!")
-                            continue
                     
-                    user = self.user_manager.get_user(self.current_user)
-                    if user:
-                        customer = Customer(
-                            email=user_data.email,
-                            name=user_data.email.split('@')[0],  # Use email username as name if not set
-                            password=user_data.password,
-                            contact_number=user.get_contact_number(),
-                            address=user.get_address(),
-                            credit_score=user.get_credit_score()
-                        )
-                        self.current_customer = customer  # Assign to current_customer
-                        customer_cli = CustomerCLI(customer)
+                    # Try to load existing customer data first
+                    loaded_customer = PolicyJSONHandler.load_policies_from_json(self.current_user)
+                    
+                    if loaded_customer:
+                        # Use the loaded customer if found
+                        self.current_customer = loaded_customer
+                    else:
+                        # Create new customer if not found
+                        if not self.user_manager.get_user(self.current_user):
+                            success, _ = self.user_manager.create_user(self.current_user, user_data.password)
+                            if not success:
+                                print("Failed to create user profile!")
+                                continue
+                        
+                        user = self.user_manager.get_user(self.current_user)
+                        if user:
+                            self.current_customer = Customer(
+                                email=user_data.email,
+                                name=user_data.email.split('@')[0],
+                                password=user_data.password,
+                                contact_number=user.get_contact_number(),
+                                address=user.get_address(),
+                                credit_score=user.get_credit_score()
+                            )
+
+                    if self.current_customer:
+                        customer_cli = CustomerCLI(self.current_customer)
                         customer_cli.run()
                     else:
                         print("Customer profile not found!")
@@ -162,7 +170,13 @@ class MainSystem:
                     print("Invalid choice. Please try again.")
             elif user_role == "agent":
                 if choice == "1":
-                    self.agent_cli.run()
+                    # Initialize agent right after login
+                    if not self.agent_cli.agent:
+                        success = self.agent_cli.initialize_agent(self.current_user)
+                        if not success:
+                            print("Failed to initialize agent account!")
+                            continue
+                    self.agent_cli.run()                
                 elif choice == "2":
                     self.logout()
                 elif choice == "3":

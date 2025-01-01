@@ -62,24 +62,54 @@ class Policy:
             return True
         return False
 
-    def update_status(self, status: PolicyStatus) -> bool:
-        """Update policy status with validation"""
-        if not isinstance(status, PolicyStatus):
-            return False
+    def update_status(self, new_status: PolicyStatus) -> bool:
+            """
+            Update the policy status
+            Args:
+                new_status: PolicyStatus enum value
+            Returns:
+                bool: True if update successful
+            """
+            try:
+                # Ensure we're working with a PolicyStatus enum
+                if isinstance(new_status, int):
+                    new_status = PolicyStatus(new_status)
+                elif isinstance(new_status, str):
+                    if new_status.startswith('PolicyStatus.'):
+                        status_name = new_status.split('.')[1]
+                        new_status = PolicyStatus[status_name]
+                    else:
+                        new_status = PolicyStatus[new_status]
+                        
+                self._status = new_status
+                return True
+            except (ValueError, KeyError, AttributeError) as e:
+                print(f"Error updating status: {str(e)}")
+                return False
 
-        valid_transitions = {
-            PolicyStatus.PENDING: [PolicyStatus.APPROVED, PolicyStatus.REJECTED, PolicyStatus.CANCELLED],
-            PolicyStatus.APPROVED: [PolicyStatus.ACTIVE, PolicyStatus.CANCELLED],
-            PolicyStatus.REJECTED: [PolicyStatus.CANCELLED],
-            PolicyStatus.ACTIVE: [PolicyStatus.INACTIVE, PolicyStatus.EXPIRED, PolicyStatus.CANCELLED],
-            PolicyStatus.INACTIVE: [PolicyStatus.ACTIVE, PolicyStatus.EXPIRED, PolicyStatus.CANCELLED],
-            PolicyStatus.EXPIRED: [PolicyStatus.CANCELLED],
-            PolicyStatus.CANCELLED: []  # Final state, no further transitions allowed
+    def get_status(self) -> PolicyStatus:
+        """
+        Get the current policy status
+        Returns:
+            PolicyStatus: Current status enum value
+        """
+        return self._status
+
+    def to_dict(self) -> dict:
+        """Convert policy to dictionary for JSON serialization"""
+        return {
+            "policy_id": self.policy_id,
+            "customer_id": self.customer_id,
+            "policy_type": self.policy_type.name,
+            "coverage_amount": self.coverage_amount,
+            "premium": self.premium,
+            # Store status in consistent format
+            "status": f"PolicyStatus.{self._status.name}",
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "conditions": self.conditions
+            # Add other policy-specific fields as needed
         }
-        if status in valid_transitions.get(self.status, []):
-            self.status = status
-            return True
-        return False
 
     def add_condition(self, condition: str) -> bool:
         """Add policy condition"""
@@ -130,8 +160,7 @@ class Policy:
             'policy_type': self.policy_type.name,  # Use .name instead of .value
             'coverage_amount': self.coverage_amount,
             'premium': self.premium,
-            'status': self.status.value,
-            'start_date': self.start_date.isoformat() if self.start_date else None,
+            "status": f"PolicyStatus.{self._status.name}",  # This will show "PolicyStatus.ACTIVE"            'start_date': self.start_date.isoformat() if self.start_date else None,
             'end_date': self.end_date.isoformat() if self.end_date else None,
             'conditions': self.conditions
         }

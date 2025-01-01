@@ -26,10 +26,9 @@ class UnderwriterCLI:
         print("1. View Profile")
         print("2. Update Profile")
         print("3. Manage Policies")
-        print("4. Process Claims")
-        print("5. Handle Payments")
-        print("6. Financial Calculations")
-        print("7. Back to Main Menu")
+        print("4. Handle Payments")
+        print("5. Financial Calculations")
+        print("6. Back to Main Menu")
 
     def run(self):
         while True:
@@ -43,12 +42,10 @@ class UnderwriterCLI:
             elif choice == "3":
                 self.manage_policies()
             elif choice == "4":
-                self.process_claims()
-            elif choice == "5":
                 self.handle_payments()
-            elif choice == "6":
+            elif choice == "5":
                 self.financial_calculations()
-            elif choice == "7":
+            elif choice == "6":
                 break
             else:
                 print("Invalid choice. Please try again.")
@@ -625,7 +622,13 @@ class UnderwriterCLI:
 
                 new_status = PolicyStatus(new_status_value)
                 policy_data.update_status(new_status)
-                print(f"Status updated to {new_status.name}")
+                
+                # Save the changes immediately
+                if PolicyJSONHandler.save_policies_to_json(customer):
+                    print(f"Status updated to {new_status.name}")
+                    print("Changes saved successfully!")
+                else:
+                    print("Failed to save changes.")
 
             elif choice == "2":
                 new_coverage = float(input("Enter new coverage amount: $"))
@@ -634,20 +637,13 @@ class UnderwriterCLI:
                     return
 
                 policy_data.set_coverage_amount(new_coverage)
-                print("Coverage amount updated successfully!")
-
-            elif choice == "3":
-                return
-
-            else:
-                print("Invalid choice.")
-                return
-
-            # Save the updated customer data
-            if PolicyJSONHandler.save_policies_to_json(customer):
-                print("Changes saved successfully!")
-            else:
-                print("Failed to save changes.")
+                
+                # Save the changes immediately
+                if PolicyJSONHandler.save_policies_to_json(customer):
+                    print("Coverage amount updated successfully!")
+                    print("Changes saved successfully!")
+                else:
+                    print("Failed to save changes.")
 
         except ValueError as e:
             print(f"Invalid input: {str(e)}")
@@ -669,75 +665,7 @@ class UnderwriterCLI:
             except Exception as e:
                 print(f"Error calculating premium: {str(e)}")
 
-    def process_claims(self):
-        print("\n=== Claims Processing ===")
-        print("1. View Pending Claims")
-        print("2. Review Claim")
-        print("3. Calculate Claim Payout")
-        print("4. Back")
-
-        choice = input("\nEnter your choice (1-4): ").strip()
-
-        if choice == "1":
-            self.view_pending_claims()
-        elif choice == "2":
-            self.review_claim()
-        elif choice == "3":
-            self.calculate_claim_payout()
-
-    def view_pending_claims(self):
-        pending_claims = [claim for claim in self.claims.values() 
-                         if claim.get_status() == "PENDING"]
-        
-        if not pending_claims:
-            print("No pending claims found.")
-            return
-
-        print("\n=== Pending Claims ===")
-        for claim in pending_claims:
-            print(f"\nClaim ID: {claim.get_claim_id()}")
-            print(f"Policy ID: {claim.policy_id}")
-            print(f"Amount: ${claim.get_amount():,.2f}")
-            print(f"Description: {claim.get_description()}")
-            if claim.evidence_documents:
-                print("Evidence Documents:")
-                for doc in claim.evidence_documents:
-                    print(f"- {doc}")
-
-    def review_claim(self):
-        claim_id = input("\nEnter Claim ID: ").strip()
-        claim = self.claims.get(claim_id)
-        
-        if not claim:
-            print("Claim not found.")
-            return
-
-        print(f"\nClaim Amount: ${claim.get_amount():,.2f}")
-        print(f"Description: {claim.get_description()}")
-        
-        action = input("\nAction (APPROVE/REJECT): ").strip().upper()
-        if action in ["APPROVE", "REJECT"]:
-            if claim.set_status(action):
-                print(f"Claim {action.lower()}d successfully.")
-                if action == "APPROVE":
-                    self.initiate_payment(claim)
-            else:
-                print("Failed to update claim status.")
-        else:
-            print("Invalid action.")
-
-    def calculate_claim_payout(self):
-        try:
-            claim_amount = float(input("Enter claim amount: "))
-            coverage_amount = float(input("Enter coverage amount: "))
-            deductible = float(input("Enter deductible amount: "))
-
-            payout = FinancialCalculator.calculate_claim_payout(
-                claim_amount, coverage_amount, deductible
-            )
-            print(f"\nCalculated Payout: ${payout:,.2f}")
-        except ValueError:
-            print("Invalid input. Please enter numeric values.")
+   
 
     def handle_payments(self):
         print("\n=== Payment Management ===")

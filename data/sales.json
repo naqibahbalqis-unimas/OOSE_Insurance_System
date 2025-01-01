@@ -1,1 +1,11 @@
-{}
+{
+    "SALE_1": {
+        "sale_id": "SALE_1",
+        "policy_id": "POL_1",
+        "customer_id": "anthony@gmail.com",
+        "amount": 1231.0,
+        "commission_earned": 0.0,
+        "sale_date": "2025-01-02T01:42:33.699725",
+        "status": "PENDING"
+    }
+}
