@@ -1,0 +1,12 @@
+{
+    "CLM001": {
+        "claim_id": "CLM001",
+        "policy_id": "POL003",
+        "customer_id": "customer@gmail.com",
+        "amount": 1231.0,
+        "status": "APPROVE",
+        "description": "Accidents",
+        "evidence_documents": [],
+        "date_filed": "2025-01-02"
+    }
+}
