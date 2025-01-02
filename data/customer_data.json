@@ -1,69 +1,42 @@
 {
-    "jennydoe@gmail.com": {
-        "customer_info": {
-            "email": "jennydoe@gmail.com",
-            "name": "jennydoe",
-            "contact_number": "",
-            "address": "",
-            "birth_date": "2024-12-29",
-            "credit_score": 0.0
-        },
-        "policies": {
-            "POL001": {
-                "policy_id": "POL001",
-                "customer_id": "jennydoe@gmail.com",
-                "policy_type": "LIFE",
-                "coverage_amount": 123121231.0,
-                "premium": 28810368.05,
-                "status": "1",
-                "start_date": "2024-12-29T00:00:00",
-                "end_date": "2060-12-29T00:00:00",
-                "conditions": [],
-                "beneficiary": "John Doe",
-                "death_benefit": 123123133.0
-            },
-            "POL002": {
-                "policy_id": "POL002",
-                "customer_id": "jennydoe@gmail.com",
-                "policy_type": "CAR",
-                "coverage_amount": 123123.0,
-                "premium": 59099.04,
-                "status": "1",
-                "start_date": "2024-12-29T00:00:00",
-                "end_date": "2030-12-29T00:00:00",
-                "conditions": [],
-                "vehicle_id": "V002",
-                "is_comprehensive": true,
-                "vehicle_age": 4,
-                "vehicle_model": "Perodua Myvi",
-                "vehicle_plate_number": "MCS2123",
-                "vehicle_condition": "Good"
-            }
-        }
+    "customer_info": {
+        "email": "johndoe@example.com",
+        "name": "John Doe",
+        "contact_number": "1234567890",
+        "address": "123 Main Street",
+        "birth_date": "1990-01-01",
+        "credit_score": 750.0
     },
-    "customer@gmail.com": {
-        "customer_info": {
-            "email": "customer@gmail.com",
-            "name": "customer",
-            "contact_number": "",
-            "address": "",
-            "birth_date": "2025-01-01",
-            "credit_score": 0.0
+    "policies": {
+        "POL123": {
+            "policy_id": "POL123",
+            "customer_id": "johndoe@example.com",
+            "policy_type": "LIFE",
+            "coverage_amount": 100000.0,
+            "premium": 650.0,
+            "status": 2,
+            "start_date": null,
+            "end_date": null,
+            "conditions": [],
+            "beneficiary": "",
+            "death_benefit": 0.0
         },
-        "policies": {
-            "POL003": {
-                "policy_id": "POL003",
-                "customer_id": "customer@gmail.com",
-                "policy_type": "LIFE",
-                "coverage_amount": 10000.0,
-                "premium": 195.0,
-                "status": "1",
-                "start_date": "2025-01-01T00:00:00",
-                "end_date": "2028-01-01T00:00:00",
-                "conditions": [],
-                "beneficiary": "Arif",
-                "death_benefit": 12000.0
-            }
+        "POL124": {
+            "policy_id": "POL124",
+            "customer_id": "johndoe@example.com",
+            "policy_type": "CAR",
+            "coverage_amount": 50000.0,
+            "premium": 4000.0,
+            "status": 1,
+            "start_date": null,
+            "end_date": null,
+            "conditions": [],
+            "vehicle_id": "",
+            "is_comprehensive": false,
+            "vehicle_age": 0,
+            "vehicle_model": "",
+            "vehicle_plate_number": "",
+            "vehicle_condition": ""
         }
     }
 }

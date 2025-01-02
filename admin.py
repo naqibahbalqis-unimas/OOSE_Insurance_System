@@ -1,7 +1,9 @@
+from tabulate import tabulate
 from datetime import date
 from typing import List, Dict, Optional, Any
 from auth import AuthenticationManager, AuthCLI
 from users import User
+
 
 class Admin(User):
     """
@@ -9,24 +11,37 @@ class Admin(User):
     """
 
     def __init__(self, user_id: str, name: str, email: str, password: str):
-        super().__init__(user_id, name, email, password, access_level="Admin")
+        super().__init__(user_id, name, email, password)
+        self.access_level = "Admin"  # Set the access level explicitly
+        self.department = None  # Add the department attribute
 
     def get_user_details(self) -> Dict[str, Any]:
         return {
             "user_id": self.user_id,
             "name": self.name,
             "email": self.email,
-            "access_level": self.access_level
+            "access_level": self.access_level,
+            "department": self.department
         }
 
-    def update_user_details(self, name: str = None, email: str = None, password: str = None, access_level: str = None):
+    def update_user_details(self, name: str = None, email: str = None, password: str = None, access_level: str = None, department: str = None):
         if name:
             self.name = name
         if email:
             self.email = email
         if password:
             self.set_password(password)
+        if department:
+            self.department = department
         # Access level change is restricted for Admin
+
+    def set_department(self, department: str):
+        """Method to set the department of the Admin."""
+        self.department = department
+
+    def set_access_level(self, access_level: str):
+        """Method to set the access level of the Admin."""
+        self.access_level = access_level
 
     def verify_claim(self, claim_id: str) -> bool:
         """
@@ -34,6 +49,9 @@ class Admin(User):
         """
         # Implement the logic to verify the claim
         return True
+
+
+
 
 class AdminCLI:
     def __init__(self, auth_manager: AuthenticationManager):
@@ -46,7 +64,10 @@ class AdminCLI:
         email = input("Enter admin email: ").strip()
         password = input("Enter admin password: ").strip()
 
-        self.admin = Admin.create_admin(email, password, self.auth_manager)
+        # Directly instantiate the Admin object here instead of calling a non-existent create_admin method
+        user_id = f"admin_{email}"  # You can generate a user ID here based on the email or any other logic
+        self.admin = Admin(user_id, email, email, password)
+
         if self.admin:
             department = input("Enter department: ").strip()
             access_level = input("Enter access level: ").strip()
@@ -72,11 +93,14 @@ class AdminCLI:
     def admin_menu(self):
         while True:
             print("\n=== Admin Menu ===")
-            print("1. Verify Claim")
-            print("2. Manage Policy")
-            print("3. Generate Report")
-            print("4. Audit User Actions")
-            print("5. Logout")
+            menu_options = [
+                ["1", "Verify Claim"],
+                ["2", "Manage Policy"],
+                ["3", "Generate Report"],
+                ["4", "Audit User Actions"],
+                ["5", "Logout"]
+            ]
+            print(tabulate(menu_options, headers=["Option", "Description"], tablefmt="grid"))
 
             choice = input("\nEnter your choice (1-5): ").strip()
 
@@ -116,10 +140,13 @@ class AdminCLI:
     def run(self):
         while True:
             print("\n=== Admin System ===")
-            print("1. Create Admin Account")
-            print("2. Login")
-            print("3. Admin Menu")
-            print("4. Exit")
+            main_menu_options = [
+                ["1", "Create Admin Account"],
+                ["2", "Login"],
+                ["3", "Admin Menu"],
+                ["4", "Exit"]
+            ]
+            print(tabulate(main_menu_options, headers=["Option", "Description"], tablefmt="grid"))
 
             choice = input("Enter your choice (1-4): ").strip()
 

@@ -1,5 +1,6 @@
 ## underwriter.py
 import json
+from tabulate import tabulate
 from typing import Dict, List, Optional
 from datetime import datetime, date
 from auth import AuthenticationManager
@@ -23,13 +24,16 @@ class UnderwriterCLI:
 
     def display_menu(self):
         print("\n=== Underwriter Management System ===")
-        print("1. View Profile")
-        print("2. Update Profile")
-        print("3. Manage Policies")
-        print("4. Process Claims")
-        print("5. Handle Payments")
-        print("6. Financial Calculations")
-        print("7. Back to Main Menu")
+        menu_options = [
+            ["1", "View Profile"],
+            ["2", "Update Profile"],
+            ["3", "Manage Policies"],
+            ["4", "Process Claims"],
+            ["5", "Handle Payments"],
+            ["6", "Financial Calculations"],
+            ["7", "Back to Main Menu"]
+        ]
+        print(tabulate(menu_options, headers=["Option", "Description"], tablefmt="grid"))
 
     def run(self):
         while True:

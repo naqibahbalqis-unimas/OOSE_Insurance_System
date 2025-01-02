@@ -1,3 +1,4 @@
+from tabulate import tabulate
 from datetime import datetime, date
 from typing import Dict, List, Optional, Tuple
 from enum import Enum
@@ -217,16 +218,18 @@ class AgentCLI:
             return False
 
     def display_menu(self):
-        """Display main menu"""
+        menu_options = [
+            ["1", "View Sales Dashboard"],
+            ["2", "Record New Sale"],
+            ["3", "View Performance Metrics"],
+            ["4", "Manage Customers"],
+            ["5", "Manage Policies"],
+            ["6", "Update Profile"],
+            ["7", "Generate Reports"],
+            ["8", "Logout"]
+        ]
         print("\n=== Insurance Agent Portal ===")
-        print("1. View Sales Dashboard")
-        print("2. Record New Sale")
-        print("3. View Performance Metrics")
-        print("4. Manage Customers")
-        print("5. Manage Policies")
-        print("6. Update Profile")
-        print("7. Generate Reports")
-        print("8. Logout")
+        print(tabulate(menu_options, headers=["Option", "Description"], tablefmt="grid"))
 
     def run(self):
         """Main CLI loop"""
@@ -258,30 +261,27 @@ class AgentCLI:
                 print("Invalid choice. Please try again.")
 
     def view_sales_dashboard(self):
-        """Display sales dashboard"""
         if not self.current_user:
             print("Please log in first.")
             return
 
         print("\n=== Sales Dashboard ===")
-        print(f"Total Sales: ${self.current_user.total_sales:,.2f}")
-        print(f"Sales Count: {self.current_user.sales_count}")
-        print(f"Target Achievement: {self.current_user.calculate_target_achievement():.1%}")
-        print(f"Performance Level: {self.current_user.current_performance_level}")
-        
+        dashboard_data = [
+            ["Total Sales", f"${self.current_user.total_sales:,.2f}"],
+            ["Sales Count", self.current_user.sales_count],
+            ["Target Achievement", f"{self.current_user.calculate_target_achievement():.1%}"],
+            ["Performance Level", self.current_user.current_performance_level]
+        ]
+        print(tabulate(dashboard_data, headers=["Metric", "Value"], tablefmt="grid"))
+
         # Recent sales
+        recent_sales = sorted(self.sales.values(), key=lambda x: x.sale_date, reverse=True)[:5]
+        sales_table = [
+            [sale.sale_id, f"${sale.amount:,.2f}", f"${sale.commission_earned:,.2f}", sale.sale_date.strftime("%Y-%m-%d")]
+            for sale in recent_sales
+        ]
         print("\nRecent Sales:")
-        recent_sales = sorted(
-            self.sales.values(), 
-            key=lambda x: x.sale_date, 
-            reverse=True
-        )[:5]
-        
-        for sale in recent_sales:
-            print(f"\nSale ID: {sale.sale_id}")
-            print(f"Amount: ${sale.amount:,.2f}")
-            print(f"Commission: ${sale.commission_earned:,.2f}")
-            print(f"Date: {sale.sale_date.strftime('%Y-%m-%d')}")
+        print(tabulate(sales_table, headers=["Sale ID", "Amount", "Commission", "Date"], tablefmt="grid"))
 
     def record_new_sale(self):
         """Record a new policy sale"""
@@ -325,26 +325,27 @@ class AgentCLI:
             print(f"Error recording sale: {str(e)}")
 
     def view_performance_metrics(self):
-        """Display detailed performance metrics"""
         if not self.current_user:
             print("Please log in first.")
             return
 
         print("\n=== Performance Metrics ===")
-        details = self.current_user.get_user_details()
-        
-        print(f"Sales Target: ${details['sales_target']:,.2f}")
-        print(f"Total Sales: ${details['total_sales']:,.2f}")
-        print(f"Target Achievement: {details['target_achievement']:.1%}")
-        print(f"Performance Level: {details['performance_level']}")
-        print(f"Customer Satisfaction: {details['customer_satisfaction']:.1f}/5.0")
-        print(f"Commission Rate: {details['commission_rate']:.1%}")
-        
+        metrics = self.current_user.get_user_details()
+        metrics_table = [
+            ["Sales Target", f"${metrics['sales_target']:,.2f}"],
+            ["Total Sales", f"${metrics['total_sales']:,.2f}"],
+            ["Target Achievement", f"{metrics['target_achievement']:.1%}"],
+            ["Performance Level", metrics["performance_level"]],
+            ["Customer Satisfaction", f"{metrics['customer_satisfaction']:.1f}/5.0"],
+            ["Commission Rate", f"{metrics['commission_rate']:.1%}"]
+        ]
+        print(tabulate(metrics_table, headers=["Metric", "Value"], tablefmt="grid"))
+
         # Monthly breakdown
         print("\nMonthly Sales Breakdown:")
         monthly_sales = self._calculate_monthly_sales()
-        for month, amount in monthly_sales.items():
-            print(f"{month}: ${amount:,.2f}")
+        sales_table = [[month, f"${amount:,.2f}"] for month, amount in monthly_sales.items()]
+        print(tabulate(sales_table, headers=["Month", "Sales"], tablefmt="grid"))
 
     def _calculate_monthly_sales(self) -> Dict[str, float]:
         """Calculate sales by month"""
